@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '0.2 (28.10.2026)';
+  const VERSION = '0.2.1 (28.10.2026)';
   const $ = id => document.getElementById(id);
   const E = window.LA_ERKENNUNG;
 
@@ -137,10 +137,11 @@
   let meldungUhr;
   function meldung(text, art, knopfText, knopfFn) {
     const m = $('hb-meldung'), k = $('hb-meldung-knopf');
+    if (art === 'fehler' && !knopfText) knopfText = 'OK';
     $('hb-meldung-text').textContent = text;
     m.className = 'an' + (art ? ' ' + art : '');
     k.hidden = !knopfText; k.textContent = knopfText || ''; k.onclick = () => { m.className = ''; knopfFn && knopfFn(); };
-    clearTimeout(meldungUhr); meldungUhr = setTimeout(() => { m.className = ''; }, knopfText ? 6000 : 3500);
+    clearTimeout(meldungUhr); meldungUhr = setTimeout(() => { m.className = ''; }, art === 'fehler' ? 15000 : knopfText ? 6000 : 3500); // Fehler lange stehen lassen (zum Lesen)
   }
   function warten(text) { $('hb-laden-text').textContent = text || 'Bitte warten …'; $('hb-laden').classList.toggle('an', !!text); }
   function frage(titel, text, ja) {
@@ -243,12 +244,25 @@
     return r;
   }
 
+  // Gewählte Datei sofort ganz einlesen, erst dann die Auswahl leeren: Android (Google Drive) entzieht sonst
+  // die Leseberechtigung, und das Lesen scheitert mit «permission problems» (NotReadableError).
+  async function dateiHolen(e) {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return null;
+    try { return new File([await f.arrayBuffer()], f.name, { lastModified: f.lastModified }); }
+    catch (err) {
+      console.error(err);
+      meldung('Die Datei konnte nicht gelesen werden. Lade sie in Google Drive zuerst herunter (⋮ → Herunterladen) und wähle sie dann unter «Downloads».', 'fehler');
+      return null;
+    }
+    finally { e.target.value = ''; }
+  }
+
   // ---------- ERP-Export laden ----------
   $('datei-erp').addEventListener('change', async e => {
-    const datei = e.target.files && e.target.files[0];
-    e.target.value = '';
-    if (!datei) return;
     warten('Artikelliste wird gelesen …');
+    const datei = await dateiHolen(e);
+    if (!datei) return warten();
     try {
       const r = await window.LA_XLSX.lesen(datei);
       if (!r.artikel.length) throw new Error('Keine Artikel in der Datei gefunden.');
@@ -267,10 +281,9 @@
 
   // ---------- Kürzelverzeichnis laden ----------
   $('datei-kuerzel').addEventListener('change', async e => {
-    const datei = e.target.files && e.target.files[0];
-    e.target.value = '';
-    if (!datei) return;
     warten('Kürzelverzeichnis wird gelesen …');
+    const datei = await dateiHolen(e);
+    if (!datei) return warten();
     try {
       const r = await window.LA_XLSX.kuerzelLesen(datei);
       const anzahl = Object.keys(r.kuerzel).length;

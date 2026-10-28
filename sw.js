@@ -1,6 +1,6 @@
 // Offline-Speicher: alle Programmdateien beim ersten Laden ablegen, danach ohne Internet starten.
 // Nach jeder Änderung an den Programmdateien VERSION erhöhen, damit das Tablet die neue Fassung holt.
-const VERSION = 'la-0.2-3';
+const VERSION = 'la-0.2-4';
 const DATEIEN = [
   './', 'index.html', 'style.css', 'app.js', 'erkennung.js', 'xlsx-lesen.js', 'manifest.webmanifest',
   'cd/hb-design.css', 'cd/HB-Logo-weiss.png', 'cd/HB-Favicon-32.png', 'cd/HB-Favicon.png', 'cd/app-symbol-192.png', 'cd/app-symbol-512.png',
