@@ -1,0 +1,150 @@
+/* =====================================================================
+   Hermann Baur AG – gemeinsames Design für alle internen Tools
+   (Sheldon, Bildertool, Bestelltool …). Regeln: README.md in diesem Ordner.
+   Firmenblau CMYK 100/88/2/7 = Bildschirm #273271 (gleich wie Logo).
+   Stand 24.10.2026
+   ===================================================================== */
+
+:root {
+  /* Farben */
+  --hb-blau:        #273271;   /* Firmenblau: Kopfzeile, Hauptknöpfe, Titel */
+  --hb-blau-dunkel: #1b2252;   /* Hover/aktiv */
+  --hb-blau-mittel: #4a57a3;   /* Akzente, Fokus, Links */
+  --hb-blau-hell:   #e9ecf7;   /* Flächen, Nummern-Chips */
+  --hb-hg:          #f5f6fb;   /* Seitenhintergrund */
+  --hb-karte:       #ffffff;
+  --hb-rand:        #d8dceb;
+  --hb-linie:       #eceef5;
+  --hb-text:        #1d2133;
+  --hb-leise:       #5f6478;
+  --hb-gruen:       #2e7d4f;  --hb-gruen-hg: #e8f4ec;
+  --hb-gelb:        #b7791f;  --hb-gelb-hg:  #fff6e0;
+  --hb-rot:         #b8322a;  --hb-rot-hg:   #fdeceb;
+  /* Schrift */
+  --hb-schrift: "Century Gothic", "Segoe UI", Arial, sans-serif;
+  --hb-mono: Consolas, "Courier New", monospace;
+  /* Form */
+  --hb-radius: 10px;
+  --hb-radius-klein: 6px;
+  --hb-schatten: 0 1px 3px rgba(39, 50, 113, .08);
+  --hb-schatten-hover: 0 6px 18px rgba(39, 50, 113, .18);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font-family: var(--hb-schrift); font-size: 14px; line-height: 1.45; color: var(--hb-text); background: var(--hb-hg); }
+h1, h2, h3 { color: var(--hb-blau); line-height: 1.2; }
+a { color: var(--hb-blau-mittel); }
+code { font-family: var(--hb-mono); font-size: 12px; background: var(--hb-blau-hell); padding: 1px 5px; border-radius: 4px; }
+[hidden] { display: none !important; }
+
+/* ---------- Kopfzeile ---------- */
+.hb-kopf { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 18px; padding: 10px 22px;
+  background: var(--hb-blau); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.hb-kopf img.hb-logo { height: 34px; display: block; }
+.hb-kopf .hb-toolname { font-size: 18px; font-weight: 700; letter-spacing: .02em; padding-left: 18px; border-left: 1px solid rgba(255,255,255,.35); }
+.hb-kopf nav { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.hb-kopf nav button { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.45); }
+.hb-kopf nav button:hover { background: rgba(255,255,255,.12); }
+
+main.hb-inhalt { max-width: 1240px; margin: 0 auto; padding: 22px 22px 60px; }
+
+/* ---------- Startseite (Muster Sheldon) ---------- */
+.hb-start-titel { margin: 6px 0 2px; font-size: 30px; }
+.hb-start-text { margin: 0 0 18px; color: var(--hb-leise); font-size: 15px; }
+.hb-bereiche { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
+.hb-bereich { background: var(--hb-karte); border: 1px solid var(--hb-rand); border-radius: var(--hb-radius); box-shadow: var(--hb-schatten); padding: 14px 16px 6px; }
+.hb-bereich-kopf { display: flex; align-items: center; gap: 12px; padding: 0 0 12px; margin-bottom: 4px; border-bottom: 1px solid var(--hb-linie); position: relative; }
+.hb-bereich-kopf::before { content: ''; position: absolute; left: -16px; top: 4px; bottom: 16px; width: 4px; border-radius: 0 3px 3px 0; background: var(--hb-blau); }
+.hb-icon { width: 44px; height: 44px; border-radius: 10px; background: var(--hb-blau-hell); color: var(--hb-blau); display: flex; align-items: center; justify-content: center; flex: none; }
+.hb-icon svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.hb-bereich-titel { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--hb-blau); }
+.hb-aktion { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--hb-linie);
+  padding: 12px 6px; margin: 0; border-radius: 6px; cursor: pointer; color: var(--hb-text); font: inherit; font-size: 16px; font-weight: 700; }
+.hb-aktion:last-child { border-bottom: 0; }
+.hb-aktion:hover, .hb-aktion:focus-visible { background: var(--hb-blau-hell); outline: none; }
+.hb-aktion small { display: block; font-size: 12px; font-weight: 400; color: var(--hb-leise); margin-top: 2px; }
+.hb-aktion[disabled] { cursor: default; opacity: .5; } .hb-aktion[disabled]:hover { background: none; }
+.hb-nr { flex: none; min-width: 30px; text-align: center; font-size: 12px; font-weight: 700; color: var(--hb-blau); background: var(--hb-blau-hell); border-radius: 6px; padding: 3px 6px; }
+.hb-folgt { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--hb-leise); background: var(--hb-linie); border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+
+/* ---------- Karten, Abschnitte ---------- */
+.hb-karte { background: var(--hb-karte); border: 1px solid var(--hb-rand); border-radius: var(--hb-radius); box-shadow: var(--hb-schatten); padding: 16px 18px; margin: 0 0 16px; }
+.hb-karte > h2:first-child, .hb-karte > h3:first-child { margin-top: 0; }
+.hb-seitentitel { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin: 0 0 14px; }
+.hb-seitentitel h2 { margin: 0; font-size: 24px; }
+.hb-seitentitel .hb-leise { font-size: 14px; }
+.hb-leise { color: var(--hb-leise); }
+.hb-klein { font-size: 12px; }
+
+/* Schritte (Ablauf einer Aufgabe) */
+.hb-schritte { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; padding: 0; list-style: none; }
+.hb-schritte li { border: 1px solid var(--hb-rand); background: var(--hb-karte); color: var(--hb-blau); border-radius: 16px; padding: 4px 12px; font-size: 13px; }
+.hb-schritte li.aktiv { background: var(--hb-blau); border-color: var(--hb-blau); color: #fff; }
+.hb-schritte li.erledigt { background: var(--hb-gruen-hg); border-color: var(--hb-gruen); color: var(--hb-gruen); }
+
+/* ---------- Knöpfe ---------- */
+button, .hb-knopf { font: inherit; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: var(--hb-radius-klein);
+  border: 1px solid var(--hb-blau); background: var(--hb-blau); color: #fff; cursor: pointer; text-decoration: none; }
+button:hover, .hb-knopf:hover { background: var(--hb-blau-dunkel); border-color: var(--hb-blau-dunkel); }
+button.leise, .hb-knopf.leise { background: #fff; color: var(--hb-blau); border-color: var(--hb-rand); }
+button.leise:hover, .hb-knopf.leise:hover { border-color: var(--hb-blau); background: var(--hb-blau-hell); }
+button.gross { font-size: 17px; font-weight: 700; padding: 11px 24px; }
+button:disabled { cursor: not-allowed; background: #a7abbd; border-color: #a7abbd; color: #fff; }
+.hb-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0; }
+.hb-leiste.rechts { justify-content: flex-end; }
+
+/* ---------- Formulare ---------- */
+label.hb-feld { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--hb-leise); }
+input[type=text], input[type=number], input[type=search], input[type=email], select, textarea {
+  font: inherit; font-size: 14px; color: var(--hb-text); padding: 7px 9px; border: 1px solid var(--hb-rand); border-radius: var(--hb-radius-klein); background: #fff; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--hb-blau-mittel); outline-offset: -1px; border-color: var(--hb-blau-mittel); }
+textarea { width: 100%; min-height: 90px; resize: vertical; }
+input.zahl { width: 80px; text-align: right; }
+
+/* ---------- Tabellen ---------- */
+.hb-tabelle-rahmen { overflow: auto; border: 1px solid var(--hb-rand); border-radius: var(--hb-radius); background: #fff; }
+table.hb-tabelle { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.hb-tabelle th { position: sticky; top: 0; z-index: 1; background: var(--hb-blau-hell); color: var(--hb-blau); text-align: left; font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--hb-rand); white-space: nowrap; }
+table.hb-tabelle td { padding: 6px 10px; border-bottom: 1px solid var(--hb-linie); vertical-align: top; }
+table.hb-tabelle td.r, table.hb-tabelle th.r { text-align: right; }
+table.hb-tabelle tbody tr:hover { background: #f8f9fd; }
+table.hb-tabelle tr.aus { color: #9aa0b3; }
+table.hb-tabelle tr.aus td { background: #fafbfd; }
+table.hb-tabelle tr.gruppe td { background: var(--hb-hg); font-weight: 700; color: var(--hb-blau); }
+
+/* ---------- Hinweise / Status ---------- */
+.hb-hinweis { border-radius: var(--hb-radius-klein); padding: 9px 12px; margin: 8px 0; border-left: 4px solid var(--hb-blau-mittel); background: var(--hb-blau-hell); }
+.hb-hinweis.ok { border-color: var(--hb-gruen); background: var(--hb-gruen-hg); }
+.hb-hinweis.warn { border-color: var(--hb-gelb); background: var(--hb-gelb-hg); }
+.hb-hinweis.fehler { border-color: var(--hb-rot); background: var(--hb-rot-hg); }
+.hb-marke { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 4px; padding: 1px 6px; background: var(--hb-blau-hell); color: var(--hb-blau); white-space: nowrap; }
+.hb-marke.ok { background: var(--hb-gruen-hg); color: var(--hb-gruen); }
+.hb-marke.warn { background: var(--hb-gelb-hg); color: var(--hb-gelb); }
+.hb-marke.fehler { background: var(--hb-rot-hg); color: var(--hb-rot); }
+
+/* ---------- Dialog, Meldung, Warten ---------- */
+dialog.hb-dialog { border: 0; border-radius: 12px; padding: 20px 24px; width: min(640px, 94vw); max-height: 90vh; overflow: auto; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+dialog.hb-dialog::backdrop { background: rgba(27, 34, 82, .45); }
+dialog.hb-dialog h3 { margin: 0 0 10px; }
+#hb-meldung { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 60; max-width: 80vw; padding: 11px 20px; border-radius: 8px; background: var(--hb-blau); color: #fff; box-shadow: var(--hb-schatten-hover); display: none; }
+#hb-meldung.fehler { background: var(--hb-rot); }
+#hb-meldung.ok { background: var(--hb-gruen); }
+#hb-laden { position: fixed; inset: 0; z-index: 70; display: none; align-items: center; justify-content: center; background: rgba(27, 34, 82, .25); }
+#hb-laden.an { display: flex; }
+#hb-laden div { display: flex; align-items: center; gap: 14px; background: #fff; color: var(--hb-blau); font-size: 18px; font-weight: 700; padding: 22px 30px; border: 2px solid var(--hb-blau); border-radius: 12px; }
+#hb-laden div::before { content: ''; width: 24px; height: 24px; border: 4px solid var(--hb-blau-hell); border-top-color: var(--hb-blau); border-radius: 50%; animation: hb-drehen .9s linear infinite; }
+@keyframes hb-drehen { to { transform: rotate(360deg); } }
+
+/* ---------- Fusszeile ---------- */
+.hb-fuss { max-width: 1240px; margin: 0 auto; padding: 14px 22px 24px; border-top: 1px solid var(--hb-rand); display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--hb-leise); }
+.hb-fuss b { color: var(--hb-blau); letter-spacing: .08em; text-transform: uppercase; font-size: 11px; }
+
+@media (max-width: 700px) {
+  .hb-kopf { padding: 10px 14px; } .hb-kopf .hb-toolname { font-size: 15px; padding-left: 12px; }
+  main.hb-inhalt { padding: 16px 14px 40px; } .hb-start-titel { font-size: 24px; }
+}
+@media print {
+  .hb-kopf, .hb-fuss, .hb-leiste, #hb-meldung, #hb-laden { display: none !important; }
+  body { background: #fff; }
+}

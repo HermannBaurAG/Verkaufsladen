@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Keine Verbindungen ins Internet: alles kommt aus dem Programmordner (CD-Regel 8). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; connect-src 'self' blob: data:; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'">
+<meta name="theme-color" content="#273271">
+<title>Material-Verkaufsladen</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="cd/HB-Favicon-32.png">
+<link rel="icon" type="image/png" sizes="256x256" href="cd/HB-Favicon.png">
+<link rel="apple-touch-icon" href="cd/app-symbol-192.png">
+<link rel="stylesheet" href="cd/hb-design.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hb-kopf">
+  <img class="hb-logo" src="cd/HB-Logo-weiss.png" alt="Hermann Baur AG">
+  <span class="hb-toolname">Material-Verkaufsladen</span>
+  <nav><button id="knopf-menue" type="button" aria-label="Menü">☰ Menü</button></nav>
+</header>
+
+<main class="hb-inhalt">
+  <div id="status-artikel" class="hb-hinweis"></div>
+  <div id="zusammenfassung" class="la-zusammenfassung"></div>
+  <div id="liste"></div>
+  <div id="leer" class="la-leer" hidden>
+    <p><b>Die Liste ist leer.</b></p>
+    <p class="hb-leise">Geh im Laden zu einem leeren Platz im Gestell und tippe unten auf <b>Etikette scannen</b>.
+      Für jeden Artikel, der fehlt, ein Foto. Nochmals derselbe Artikel = 1 Stück mehr.</p>
+  </div>
+</main>
+
+<div class="la-fuss">
+  <button id="knopf-tippen" type="button" class="leise gross">⌨ Eintippen</button>
+  <button id="knopf-scannen" type="button" class="gross">📷 Etikette scannen</button>
+</div>
+<input id="foto" type="file" accept="image/*" capture="environment" hidden>
+<input id="datei-erp" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+<input id="datei-kuerzel" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+
+<!-- Menü -->
+<dialog id="dlg-menue" class="hb-dialog">
+  <h3>Menü</h3>
+  <div class="la-menue">
+    <button type="button" class="leise gross" data-aktion="erp">📄 Artikelliste (ERP-Export) laden</button>
+    <button type="button" class="leise gross" data-aktion="kuerzel">🏷 Kürzelverzeichnis laden</button>
+    <button type="button" class="leise gross" data-aktion="leeren">🗑 Liste leeren</button>
+    <button type="button" class="leise gross" data-aktion="info">ℹ Über das Tool</button>
+  </div>
+  <div class="hb-leiste rechts"><button type="button" class="leise" data-aktion="zu">Schliessen</button></div>
+</dialog>
+
+<!-- Artikel wählen / korrigieren / eintippen -->
+<dialog id="dlg-artikel" class="hb-dialog">
+  <h3 id="dlg-artikel-titel">Artikel</h3>
+  <div id="dlg-artikel-info"></div>
+  <div id="dlg-artikel-bild" class="la-bild" hidden></div>
+  <div id="dlg-artikel-vorschlaege" class="la-vorschlaege"></div>
+  <label class="hb-feld">Suchen (Artikelnummer oder Bezeichnung)
+    <input id="dlg-artikel-suche" type="search" autocomplete="off" autocapitalize="characters" spellcheck="false">
+  </label>
+  <div id="dlg-artikel-treffer" class="la-vorschlaege"></div>
+  <div id="dlg-artikel-frei" class="la-frei" hidden>
+    <label class="hb-feld">Artikelnummer <input id="frei-nr" type="text" autocapitalize="characters" spellcheck="false"></label>
+    <label class="hb-feld">Bezeichnung <input id="frei-text" type="text"></label>
+    <button id="frei-ok" type="button">So übernehmen</button>
+  </div>
+  <div class="hb-leiste">
+    <button id="dlg-artikel-loeschen" type="button" class="leise la-rot" hidden>Aus Liste entfernen</button>
+    <span style="flex:1"></span>
+    <button id="dlg-artikel-zu" type="button" class="leise">Abbrechen</button>
+  </div>
+</dialog>
+
+<!-- Rückfrage -->
+<dialog id="dlg-frage" class="hb-dialog">
+  <h3 id="dlg-frage-titel"></h3>
+  <p id="dlg-frage-text"></p>
+  <div class="hb-leiste rechts">
+    <button id="dlg-frage-nein" type="button" class="leise">Abbrechen</button>
+    <button id="dlg-frage-ja" type="button">OK</button>
+  </div>
+</dialog>
+
+<div id="hb-meldung"><span id="hb-meldung-text"></span> <button id="hb-meldung-knopf" type="button" class="leise" hidden></button></div>
+<div id="hb-laden"><div id="hb-laden-text">Bitte warten …</div></div>
+
+<script src="xlsx-lesen.js"></script>
+<script src="lib/tesseract.min.js"></script>
+<script src="erkennung.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
