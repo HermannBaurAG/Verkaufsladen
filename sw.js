@@ -1,6 +1,6 @@
 // Offline-Speicher: alle Programmdateien beim ersten Laden ablegen, danach ohne Internet starten.
 // Nach jeder Änderung an den Programmdateien VERSION erhöhen, damit das Tablet die neue Fassung holt.
-const VERSION = 'la-0.2-5';
+const VERSION = 'la-0.2-6';
 const DATEIEN = [
   './', 'index.html', 'style.css', 'app.js', 'erkennung.js', 'xlsx-lesen.js', 'manifest.webmanifest',
   'cd/hb-design.css', 'cd/HB-Logo-weiss.png', 'cd/HB-Favicon-32.png', 'cd/HB-Favicon.png', 'cd/app-symbol-192.png', 'cd/app-symbol-512.png',
@@ -8,7 +8,9 @@ const DATEIEN = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(DATEIEN)).then(() => self.skipWaiting()));
+  // cache: 'reload' = am Browser-Zwischenspeicher vorbei direkt vom Server holen (GitHub Pages lässt Dateien sonst
+  // bis 10 Min. im Zwischenspeicher, dann käme eine alte Fassung in den neuen Offline-Speicher)
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(DATEIEN.map(d => new Request(d, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {

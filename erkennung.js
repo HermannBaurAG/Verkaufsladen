@@ -221,6 +221,18 @@
     const bmp = await createImageBitmap(datei, { imageOrientation: 'from-image' });
     try {
       const codesP = strichcodes(bmp);
+      // Strichcode zuerst: Gehört der Code der mittleren Etikette zu genau einem Artikel, ist das sicher genug
+      // (keine Texterkennung nötig). Ein zweiter Code fast gleich nah an der Mitte (Nachbar-Etikette) -> doch lesen.
+      if (idx) {
+        const codes = await codesP;
+        const [c1, c2] = codes.filter(c => idx.nachEan.has(c.wert));
+        const treffer = c1 ? idx.nachEan.get(c1.wert) : [];
+        const nachbar = c2 && c2.wert !== c1.wert && c2.mitte - c1.mitte < 0.1;
+        if (treffer.length === 1 && !nachbar) {
+          return { kandidaten: [{ a: treffer[0], punkte: 2, grund: 'Strichcode' }], sicher: true, roh: null, ean: c1.wert,
+            zeit: Math.round(performance.now() - t0), gelesen: [] };
+        }
+      }
       const mitte = ausschnitt(bmp, MITTE);
       let gel = await lesen(mitte);
       const codes = await codesP;

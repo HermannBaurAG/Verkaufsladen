@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '0.2.2 (28.10.2026)';
+  const VERSION = '0.2.3 (28.10.2026)';
   const $ = id => document.getElementById(id);
   const E = window.LA_ERKENNUNG;
 
@@ -329,7 +329,12 @@
   $('knopf-menue').onclick = () => $('dlg-menue').showModal();
 
   // ---------- Offline ----------
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(e => console.warn('Offline-Speicher', e));
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    // Neue Fassung im Offline-Speicher übernommen -> Seite einmal neu laden, damit sie gleich gilt (nicht erst beim nächsten Start)
+    const hatteAlte = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hatteAlte) location.reload(); });
+    navigator.serviceWorker.register('sw.js').catch(e => console.warn('Offline-Speicher', e));
+  }
 
   zeichnen();
   window.LA = { fotoAuswerten, get liste() { return liste; }, get stamm() { return stamm; } }; // zum Testen
