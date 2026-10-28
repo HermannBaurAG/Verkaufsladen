@@ -52,6 +52,22 @@
   <div class="hb-leiste rechts"><button type="button" class="leise" data-aktion="zu">Schliessen</button></div>
 </dialog>
 
+<!-- Anleitung vor dem Laden einer Datei (direkt aus Google Drive geht auf dem Tab nicht) -->
+<dialog id="dlg-laden" class="hb-dialog">
+  <h3 id="dlg-laden-titel">Datei laden</h3>
+  <ol class="la-anleitung">
+    <li>Öffne die App <b>Google Drive</b> und suche die Datei <b id="dlg-laden-datei"></b>.</li>
+    <li>Tippe bei der Datei auf <b>⋮</b> und dann auf <b>Herunterladen</b>.</li>
+    <li>Komm hierher zurück, tippe auf <b>Datei wählen</b> und wähle die Datei unter <b>Downloads</b>.</li>
+  </ol>
+  <p class="hb-leise hb-klein">Direkt aus Google Drive wählen geht auf dem Tablet nicht (fehlende Berechtigung).
+    Nach jeder Änderung an der Datei: neu herunterladen und neu laden.</p>
+  <div class="hb-leiste rechts">
+    <button type="button" class="leise" id="dlg-laden-nein">Abbrechen</button>
+    <button type="button" id="dlg-laden-ja">Datei wählen</button>
+  </div>
+</dialog>
+
 <!-- Artikel wählen / korrigieren / eintippen -->
 <dialog id="dlg-artikel" class="hb-dialog">
   <h3 id="dlg-artikel-titel">Artikel</h3>

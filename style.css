@@ -50,6 +50,8 @@ button.gross { min-height: 52px; }
 /* Dialoge */
 .la-menue { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 4px; }
 .la-menue button { justify-content: flex-start; }
+.la-anleitung { margin: 8px 0 10px; padding-left: 1.4em; font-size: 1.05rem; line-height: 1.5; }
+.la-anleitung li { margin-bottom: 8px; }
 .la-vorschlaege { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
 .la-vorschlag { display: block; width: 100%; text-align: left; background: #fff; color: var(--hb-text); border: 1px solid var(--hb-rand); padding: 10px 12px; }
 .la-vorschlag:hover { background: var(--hb-blau-hell); border-color: var(--hb-blau); }

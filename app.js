@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '0.2.1 (28.10.2026)';
+  const VERSION = '0.2.2 (28.10.2026)';
   const $ = id => document.getElementById(id);
   const E = window.LA_ERKENNUNG;
 
@@ -297,12 +297,22 @@
     } catch (err) { warten(); console.error(err); meldung('Kürzelverzeichnis: ' + (err.message || err), 'fehler'); }
   });
 
+  // Vor dem Laden kurz zeigen, wie es geht: Datei zuerst aus Google Drive herunterladen, dann unter Downloads wählen
+  function ladenAnleitung(titel, datei, inputId) {
+    const d = $('dlg-laden');
+    $('dlg-laden-titel').textContent = titel;
+    $('dlg-laden-datei').textContent = datei;
+    $('dlg-laden-ja').onclick = () => { d.close(); $(inputId).click(); };
+    $('dlg-laden-nein').onclick = () => d.close();
+    d.showModal();
+  }
+
   // ---------- Menü ----------
   document.addEventListener('click', async e => {
     const b = e.target.closest('[data-aktion]'); if (!b || b.closest('#liste')) return;
     const a = b.dataset.aktion;
-    if (a === 'erp') { $('dlg-menue').close(); $('datei-erp').click(); }
-    else if (a === 'kuerzel') { $('dlg-menue').close(); $('datei-kuerzel').click(); }
+    if (a === 'erp') { $('dlg-menue').close(); ladenAnleitung('Artikelliste laden', 'ERP-Export …xlsx', 'datei-erp'); }
+    else if (a === 'kuerzel') { $('dlg-menue').close(); ladenAnleitung('Kürzelverzeichnis laden', 'Marken und Kuerzel.xlsx', 'datei-kuerzel'); }
     else if (a === 'leeren') {
       $('dlg-menue').close();
       if (!liste.length) return meldung('Die Liste ist schon leer.');
