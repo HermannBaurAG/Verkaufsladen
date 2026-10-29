@@ -37,6 +37,19 @@
   <button id="knopf-scannen" type="button" class="gross">📷 Etikette scannen</button>
 </div>
 <input id="foto" type="file" accept="image/*" capture="environment" hidden>
+
+<!-- Eigene Kamera-Ansicht: Zielrahmen in der Mitte, Auslöser links und rechts (Tab quer: unter den Daumen),
+     Strichcode im Rahmen wird automatisch erkannt. Pro Öffnen ein Artikel, danach zurück zur Liste. -->
+<div id="kamera" class="la-kamera" hidden>
+  <video id="kamera-bild" autoplay playsinline muted></video>
+  <div id="kamera-rahmen" class="la-kamera-rahmen"></div>
+  <div class="la-kamera-oben">
+    <button id="kamera-zu" type="button" class="leise">✕ Abbrechen</button>
+    <span id="kamera-hinweis">Etikette in den Rahmen halten – Strichcode wird automatisch erkannt</span>
+  </div>
+  <button id="kamera-links" type="button" class="la-ausloeser links" aria-label="Foto machen"></button>
+  <button id="kamera-rechts" type="button" class="la-ausloeser rechts" aria-label="Foto machen"></button>
+</div>
 <input id="datei-erp" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 <input id="datei-kuerzel" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 

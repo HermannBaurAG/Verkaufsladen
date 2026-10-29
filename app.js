@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '0.2.3 (28.10.2026)';
+  const VERSION = '0.3 (29.10.2026)';
   const $ = id => document.getElementById(id);
   const E = window.LA_ERKENNUNG;
 
@@ -171,6 +171,9 @@
       info = o.kandidaten.length ? '<p class="hb-leise">Nicht ganz sicher gelesen – tippe auf den richtigen Artikel:</p>'
         : `<div class="hb-hinweis warn">${idx ? 'Kein passender Artikel in der Artikelliste gefunden.' : 'Keine Artikelliste geladen.'}` +
           `${o.roh ? ` Gelesen: <b>${esc(o.roh.nr)}</b>` : ' Auf dem Foto konnte keine Nummer gelesen werden.'}</div>`;
+      // Strichcode gelesen, aber keinem Artikel zugeordnet -> anzeigen (z.B. EAN im ERP fehlt oder ist falsch)
+      if (o.ean && idx && !o.kandidaten.some(k => k.grund.includes('Strichcode')))
+        info += `<p class="hb-leise hb-klein">Strichcode gelesen: <b>${esc(o.ean)}</b> – dieser Code ist in der Artikelliste bei keinem Artikel eingetragen.</p>`;
     }
     $('dlg-artikel-info').innerHTML = info;
     const bild = $('dlg-artikel-bild');
@@ -225,7 +228,102 @@
   });
 
   // ---------- Scannen ----------
-  $('knopf-scannen').onclick = () => { $('foto').value = ''; $('foto').click(); E.vorbereiten().catch(() => {}); };
+  $('knopf-scannen').onclick = () => { E.vorbereiten().catch(() => {}); kameraOeffnen(); };
+  // Ersatz, wenn die eigene Kamera-Ansicht nicht geht: Kamera-App von Android
+  function androidKamera() { $('foto').value = ''; $('foto').click(); }
+
+  // ---------- Eigene Kamera-Ansicht ----------
+  // Zielrahmen = Bereich, den die Texterkennung zuerst liest (E.MITTE). Strichcode im Rahmen, der zu genau einem
+  // Artikel passt, wird zweimal hintereinander gleich gelesen -> Artikel direkt in die Liste, Kamera zu.
+  const kam = { strom: null, uhr: null, letzter: '', aus: false };
+  const video = $('kamera-bild');
+  async function kameraOeffnen() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return androidKamera();
+    try {
+      kam.strom = await navigator.mediaDevices.getUserMedia({ audio: false, video: {
+        facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1920 }, aspectRatio: { ideal: 4 / 3 } } });
+    } catch (err) {
+      console.warn('Kamera', err);
+      meldung('Die Kamera im Tool liess sich nicht öffnen – die normale Kamera-App wird verwendet.', 'fehler');
+      return androidKamera();
+    }
+    const spur = kam.strom.getVideoTracks()[0];
+    spur.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+    video.srcObject = kam.strom;
+    $('kamera').hidden = false;
+    kam.aus = false; kam.letzter = '';
+    $('kamera-rahmen').classList.remove('treffer');
+    $('kamera-hinweis').textContent = 'BarcodeDetector' in window && idx
+      ? 'Etikette in den Rahmen halten – Strichcode wird automatisch erkannt, sonst auf den Knopf oder ins Bild tippen.'
+      : 'Etikette in den Rahmen halten und auf den Knopf oder ins Bild tippen.';
+    await video.play().catch(() => {});
+    rahmenSetzen();
+    if ('BarcodeDetector' in window && idx) strichcodeSuchen();
+  }
+  function kameraZu() {
+    kam.aus = true; clearTimeout(kam.uhr);
+    if (kam.strom) kam.strom.getTracks().forEach(t => t.stop());
+    kam.strom = null; video.srcObject = null;
+    $('kamera').hidden = true;
+  }
+  // Video füllt den Bildschirm (object-fit: cover) -> Umrechnung Video-Bildpunkt <-> Bildschirm
+  function abbildung() {
+    const W = video.clientWidth, H = video.clientHeight, vw = video.videoWidth || W, vh = video.videoHeight || H;
+    const s = Math.max(W / vw, H / vh);
+    return { s, ox: (W - vw * s) / 2, oy: (H - vh * s) / 2, vw, vh };
+  }
+  function rahmenSetzen() {
+    const { s, ox, oy, vw, vh } = abbildung(), [x0, y0, x1, y1] = E.MITTE, r = $('kamera-rahmen').style;
+    const L = Math.max(8, ox + x0 * vw * s), T = Math.max(70, oy + y0 * vh * s);
+    const R = Math.min(video.clientWidth - 8, ox + x1 * vw * s), B = Math.min(video.clientHeight - 8, oy + y1 * vh * s);
+    Object.assign(r, { left: L + 'px', top: T + 'px', width: (R - L) + 'px', height: (B - T) + 'px' });
+  }
+  video.addEventListener('loadedmetadata', rahmenSetzen);
+  window.addEventListener('resize', () => { if (!$('kamera').hidden) rahmenSetzen(); });
+
+  async function strichcodeSuchen() {
+    if (kam.aus) return;
+    try {
+      const codes = video.readyState >= 2 ? await new BarcodeDetector().detect(video) : [];
+      const [x0, y0, x1, y1] = E.MITTE, vw = video.videoWidth, vh = video.videoHeight;
+      const imRahmen = codes.filter(c => {
+        const cx = (c.boundingBox.x + c.boundingBox.width / 2) / vw, cy = (c.boundingBox.y + c.boundingBox.height / 2) / vh;
+        return cx > x0 && cx < x1 && cy > y0 && cy < y1;
+      }).map(c => /^\d+$/.test(c.rawValue) ? E.eanNorm(c.rawValue) : c.rawValue.trim());
+      const passend = [...new Set(imRahmen)].filter(w => E.codeTreffer(idx, w).length === 1);
+      const wert = passend.length === 1 ? passend[0] : '';
+      $('kamera-rahmen').classList.toggle('treffer', !!wert);
+      if (wert && wert === kam.letzter && !kam.aus) { // zweimal gleich gelesen -> übernehmen
+        const a = E.codeTreffer(idx, wert)[0];
+        if (navigator.vibrate) navigator.vibrate(80);
+        kameraZu(); hinzufuegen(a.nr);
+        return;
+      }
+      kam.letzter = wert;
+    } catch (err) { console.warn('Strichcode live', err); }
+    if (!kam.aus) kam.uhr = setTimeout(strichcodeSuchen, 200);
+  }
+
+  // Foto auslösen: wenn möglich in voller Auflösung (ImageCapture), sonst Standbild aus dem Video
+  async function ausloesen() {
+    if (kam.aus || !kam.strom) return;
+    kam.aus = true; clearTimeout(kam.uhr);
+    let blob = null;
+    const spur = kam.strom.getVideoTracks()[0];
+    if (window.ImageCapture) { try { blob = await new ImageCapture(spur).takePhoto(); } catch (err) { console.warn('takePhoto', err); } }
+    if (!blob) {
+      const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
+      c.getContext('2d').drawImage(video, 0, 0);
+      blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.95));
+    }
+    kameraZu();
+    if (blob) await fotoAuswerten(new File([blob], 'kamera.jpg', { type: blob.type || 'image/jpeg' }));
+  }
+  $('kamera-links').onclick = ausloesen;
+  $('kamera-rechts').onclick = ausloesen;
+  video.addEventListener('click', ausloesen);
+  $('kamera-zu').onclick = kameraZu;
+  document.addEventListener('visibilitychange', () => { if (document.hidden && !$('kamera').hidden) kameraZu(); });
   $('knopf-tippen').onclick = () => artikelDialog({ modus: 'eintippen', kandidaten: [] });
   $('foto').addEventListener('change', async e => {
     const datei = e.target.files && e.target.files[0];
@@ -240,7 +338,7 @@
     warten();
     console.info('Erkennung', r.zeit + ' ms', r);
     if (r.sicher) { hinzufuegen(r.kandidaten[0].a.nr); return r; }
-    artikelDialog({ modus: 'scan', kandidaten: r.kandidaten, roh: r.roh, bildUrl: URL.createObjectURL(datei) });
+    artikelDialog({ modus: 'scan', kandidaten: r.kandidaten, roh: r.roh, ean: r.ean, bildUrl: URL.createObjectURL(datei) });
     return r;
   }
 

@@ -13,6 +13,8 @@
   const VERWECHSLUNG = { O: '0', Q: '0', I: '1', L: '1', '|': '1', '!': '1', S: '5', Z: '2', B: '8', G: '6' };
   function norm(nr) { return String(nr || '').toUpperCase().replace(/[–—]/g, '-').replace(/_/g, '/').replace(/\s+/g, ''); }
   function skelett(nr) { return norm(nr).replace(/[OQIL|!SZBG]/g, c => VERWECHSLUNG[c]); }
+  // Strichcode vergleichbar machen: nur Ziffern, ohne führende Nullen (UPC-A 12-stellig = EAN-13 mit 0 davor)
+  function eanNorm(c) { return String(c || '').replace(/\D/g, '').replace(/^0+/, ''); }
   // Bezeichnung vergleichbar machen (das Lesemodell kennt keine Umlaute: «Handsage» statt «Handsäge»)
   function normText(s) {
     return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -39,7 +41,7 @@
     const add = (m, k, a) => { if (!k) return; const l = m.get(k); l ? l.push(a) : m.set(k, [a]); };
     for (const a of artikel) {
       a._norm = norm(a.nr); a._skelett = skelett(a.nr); a._text = normText(a.text);
-      add(nachNr, a._norm, a); add(nachSkelett, a._skelett, a); add(nachEan, a.ean, a);
+      add(nachNr, a._norm, a); add(nachSkelett, a._skelett, a); add(nachEan, eanNorm(a.ean), a);
       for (const w of new Set(a._text.split(' '))) if (w.length >= 4 && !/^\d+$/.test(w)) add(nachWort, w, a);
     }
     return { artikel, nachNr, nachSkelett, nachEan, nachWort };
@@ -109,15 +111,28 @@
     return ausschnitt(bmp, [a0, b0, a1, b1], Math.max(1, 2200 / ((a1 - a0) * bmp.width)));
   }
 
+  // Alle Strichcode-Arten, die das Gerät kennt (Produkte tragen nicht nur EAN-13). Findet der Leser im vollen Foto
+  // nichts, nochmals verkleinert versuchen: grosse, nah fotografierte Codes werden so oft doch noch gelesen.
   async function strichcodes(bmp) {
     if (!('BarcodeDetector' in window)) return [];
     try {
-      const d = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'code_128'] });
-      const cx = bmp.width / 2, cy = bmp.height / 2;
-      return (await d.detect(bmp)).map(b => ({
-        wert: b.rawValue,
-        mitte: Math.hypot((b.boundingBox.x + b.boundingBox.width / 2 - cx) / bmp.width, (b.boundingBox.y + b.boundingBox.height / 2 - cy) / bmp.height),
-      })).sort((a, b) => a.mitte - b.mitte);
+      const d = new BarcodeDetector();
+      for (const seite of [0, 1600, 900]) {
+        let bild = bmp, W = bmp.width, H = bmp.height;
+        if (seite) {
+          const f = seite / Math.max(W, H);
+          if (f >= 1) continue;
+          bild = document.createElement('canvas'); bild.width = Math.round(W * f); bild.height = Math.round(H * f);
+          bild.getContext('2d').drawImage(bmp, 0, 0, bild.width, bild.height);
+          W = bild.width; H = bild.height;
+        }
+        const gefunden = await d.detect(bild);
+        if (gefunden.length) return gefunden.map(b => ({
+          wert: /^\d+$/.test(b.rawValue) ? eanNorm(b.rawValue) : b.rawValue.trim(),
+          mitte: Math.hypot((b.boundingBox.x + b.boundingBox.width / 2 - W / 2) / W, (b.boundingBox.y + b.boundingBox.height / 2 - H / 2) / H),
+        })).sort((a, b) => a.mitte - b.mitte);
+      }
+      return [];
     } catch (e) { console.warn('Strichcode', e); return []; }
   }
 
@@ -173,6 +188,9 @@
     return res;
   }
 
+  // Strichcode -> Artikel: über die EAN, sonst steht im Code evtl. direkt die Artikelnummer
+  function codeTreffer(idx, wert) { return idx.nachEan.get(eanNorm(wert)) || idx.nachNr.get(norm(wert)) || []; }
+
   // Punkte pro Artikel: Nummer + Bezeichnung + Strichcode, Abzug für Abstand zur Bildmitte
   function bewerten(idx, gel, codes) {
     const k = new Map(); // nr -> {a, nr, text, ean, mitte}
@@ -183,7 +201,7 @@
     for (const z of gel.zeilen) for (const t of textTreffer(idx, z.text)) {
       const e = eintrag(t.a); if (t.guete > e.text) { e.text = t.guete; e.mitte = Math.min(e.mitte, z.mitte); }
     }
-    for (const c of codes) for (const a of idx.nachEan.get(c.wert) || []) { const e = eintrag(a); e.ean = 1; e.mitte = Math.min(e.mitte, c.mitte); }
+    for (const c of codes) for (const a of codeTreffer(idx, c.wert)) { const e = eintrag(a); e.ean = 1; e.mitte = Math.min(e.mitte, c.mitte); }
     return [...k.values()].map(e => ({
       a: e.a,
       punkte: e.nr + 0.6 * e.text + 0.5 * e.ean - 0.6 * e.mitte,
@@ -225,8 +243,8 @@
       // (keine Texterkennung nötig). Ein zweiter Code fast gleich nah an der Mitte (Nachbar-Etikette) -> doch lesen.
       if (idx) {
         const codes = await codesP;
-        const [c1, c2] = codes.filter(c => idx.nachEan.has(c.wert));
-        const treffer = c1 ? idx.nachEan.get(c1.wert) : [];
+        const [c1, c2] = codes.filter(c => codeTreffer(idx, c.wert).length);
+        const treffer = c1 ? codeTreffer(idx, c1.wert) : [];
         const nachbar = c2 && c2.wert !== c1.wert && c2.mitte - c1.mitte < 0.1;
         if (treffer.length === 1 && !nachbar) {
           return { kandidaten: [{ a: treffer[0], punkte: 2, grund: 'Strichcode' }], sicher: true, roh: null, ean: c1.wert,
@@ -261,5 +279,5 @@
   }
 
   // _intern: nur zum Abstimmen der Erkennung (Konsole), wird vom Tool selbst nicht gebraucht
-  window.LA_ERKENNUNG = { index, erkennen, vorbereiten, norm, skelett, _intern: { ausschnitt, lesen, etiketteUeberPreis, bewerten, textTreffer, MITTE } };
+  window.LA_ERKENNUNG = { index, erkennen, vorbereiten, norm, skelett, codeTreffer, eanNorm, MITTE, _intern: { ausschnitt, lesen, etiketteUeberPreis, bewerten, textTreffer, MITTE } };
 })();
