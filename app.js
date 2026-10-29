@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '0.3 (29.10.2026)';
+  const VERSION = '0.3.1 (29.10.2026)';
   const $ = id => document.getElementById(id);
   const E = window.LA_ERKENNUNG;
 
@@ -241,7 +241,7 @@
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return androidKamera();
     try {
       kam.strom = await navigator.mediaDevices.getUserMedia({ audio: false, video: {
-        facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1920 }, aspectRatio: { ideal: 4 / 3 } } });
+        facingMode: { ideal: 'environment' }, width: { ideal: 4096 }, height: { ideal: 3072 } } }); // so hoch wie möglich: dünne Striche
     } catch (err) {
       console.warn('Kamera', err);
       meldung('Die Kamera im Tool liess sich nicht öffnen – die normale Kamera-App wird verwendet.', 'fehler');
@@ -256,6 +256,8 @@
     $('kamera-hinweis').textContent = 'BarcodeDetector' in window && idx
       ? 'Etikette in den Rahmen halten – Strichcode wird automatisch erkannt, sonst auf den Knopf oder ins Bild tippen.'
       : 'Etikette in den Rahmen halten und auf den Knopf oder ins Bild tippen.';
+    kamStatus(!('BarcodeDetector' in window) ? 'Strichcode-Leser: auf diesem Gerät/Browser nicht vorhanden'
+      : !idx ? 'Strichcode-Leser: aus (keine Artikelliste geladen)' : 'Strichcode-Leser startet …');
     await video.play().catch(() => {});
     rahmenSetzen();
     if ('BarcodeDetector' in window && idx) strichcodeSuchen();
@@ -281,27 +283,36 @@
   video.addEventListener('loadedmetadata', rahmenSetzen);
   window.addEventListener('resize', () => { if (!$('kamera').hidden) rahmenSetzen(); });
 
+  // Nur den Rahmen-Ausschnitt in voller Video-Auflösung auf ein Canvas kopieren und dort suchen
+  // (zuverlässiger als direkt im Video, und alles, was gefunden wird, liegt im Rahmen).
+  const kamCanvas = document.createElement('canvas');
+  let detektor = null;
+  function kamStatus(text) { $('kamera-status').textContent = text; }
   async function strichcodeSuchen() {
     if (kam.aus) return;
     try {
-      const codes = video.readyState >= 2 ? await new BarcodeDetector().detect(video) : [];
-      const [x0, y0, x1, y1] = E.MITTE, vw = video.videoWidth, vh = video.videoHeight;
-      const imRahmen = codes.filter(c => {
-        const cx = (c.boundingBox.x + c.boundingBox.width / 2) / vw, cy = (c.boundingBox.y + c.boundingBox.height / 2) / vh;
-        return cx > x0 && cx < x1 && cy > y0 && cy < y1;
-      }).map(c => /^\d+$/.test(c.rawValue) ? E.eanNorm(c.rawValue) : c.rawValue.trim());
-      const passend = [...new Set(imRahmen)].filter(w => E.codeTreffer(idx, w).length === 1);
-      const wert = passend.length === 1 ? passend[0] : '';
-      $('kamera-rahmen').classList.toggle('treffer', !!wert);
-      if (wert && wert === kam.letzter && !kam.aus) { // zweimal gleich gelesen -> übernehmen
-        const a = E.codeTreffer(idx, wert)[0];
-        if (navigator.vibrate) navigator.vibrate(80);
-        kameraZu(); hinzufuegen(a.nr);
-        return;
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (video.readyState >= 2 && vw) {
+        detektor = detektor || new BarcodeDetector();
+        const [x0, y0, x1, y1] = E.MITTE;
+        kamCanvas.width = Math.round((x1 - x0) * vw); kamCanvas.height = Math.round((y1 - y0) * vh);
+        kamCanvas.getContext('2d').drawImage(video, x0 * vw, y0 * vh, kamCanvas.width, kamCanvas.height, 0, 0, kamCanvas.width, kamCanvas.height);
+        const gelesen = [...new Set((await detektor.detect(kamCanvas)).map(c => /^\d+$/.test(c.rawValue) ? E.eanNorm(c.rawValue) : c.rawValue.trim()))];
+        const passend = gelesen.filter(w => E.codeTreffer(idx, w).length === 1);
+        const wert = passend.length === 1 ? passend[0] : '';
+        $('kamera-rahmen').classList.toggle('treffer', !!wert);
+        kamStatus(`Kamera ${vw}×${vh} · Strichcode-Leser aktiv` + (gelesen.length ? ` · gelesen: ${gelesen.join(', ')}` +
+          (wert ? '' : gelesen.some(w => E.codeTreffer(idx, w).length > 1) ? ' (mehrere Artikel – bitte auslösen)' : ' (nicht in der Artikelliste)') : ''));
+        if (wert && wert === kam.letzter && !kam.aus) { // zweimal gleich gelesen -> übernehmen
+          const a = E.codeTreffer(idx, wert)[0];
+          if (navigator.vibrate) navigator.vibrate(80);
+          kameraZu(); hinzufuegen(a.nr);
+          return;
+        }
+        kam.letzter = wert;
       }
-      kam.letzter = wert;
-    } catch (err) { console.warn('Strichcode live', err); }
-    if (!kam.aus) kam.uhr = setTimeout(strichcodeSuchen, 200);
+    } catch (err) { console.warn('Strichcode live', err); kamStatus('Strichcode-Leser: Fehler – ' + (err.message || err)); }
+    if (!kam.aus) kam.uhr = setTimeout(strichcodeSuchen, 150);
   }
 
   // Foto auslösen: wenn möglich in voller Auflösung (ImageCapture), sonst Standbild aus dem Video

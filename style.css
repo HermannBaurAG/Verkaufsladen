@@ -78,6 +78,8 @@ button.la-rot { color: var(--hb-rot); border-color: var(--hb-rot); }
 .la-kamera-oben { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 14px;
   padding: max(12px, env(safe-area-inset-top)) 16px 12px; color: #fff; font-size: 16px; text-shadow: 0 1px 3px #000; }
 .la-kamera-oben button { background: rgba(255, 255, 255, .92); }
+.la-kamera-status { position: absolute; left: 0; right: 0; bottom: max(10px, env(safe-area-inset-bottom)); text-align: center;
+  color: #fff; font-size: 13px; text-shadow: 0 1px 3px #000; pointer-events: none; }
 .la-ausloeser { position: absolute; top: 50%; width: 96px; height: 96px; margin-top: -48px; padding: 0; border-radius: 50%;
   background: rgba(255, 255, 255, .9); border: 6px solid rgba(255, 255, 255, .45); background-clip: padding-box;
   box-shadow: 0 2px 10px rgba(0, 0, 0, .5); }
